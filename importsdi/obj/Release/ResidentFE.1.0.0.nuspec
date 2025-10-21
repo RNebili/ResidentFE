@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>ResidentFE</id>
+    <version>1.0.0</version>
+    <authors>ResidentFE</authors>
+    <description>Package Description</description>
+    <dependencies>
+      <group targetFramework="net5.0">
+        <dependency id="System.Data.SqlClient" version="4.8.3" exclude="Build,Analyzers" />
+        <dependency id="System.Security.Cryptography.Pkcs" version="6.0.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Progetti\ResidentFE\importsdi\bin\x64\Release\net5.0\ResidentFE.dll" target="lib\net5.0\ResidentFE.dll" />
+  </files>
+</package>

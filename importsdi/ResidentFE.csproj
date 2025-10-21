@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <ApplicationIcon></ApplicationIcon>
+    <Win32Resource />
+    <OutputType>Library</OutputType>
+    <StartupObject />
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="test\**" />
+    <EmbeddedResource Remove="test\**" />
+    <None Remove="test\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="ClsQuery.cs" />
+    <Compile Remove="DataObj_controller.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="check dati condomini.xlsx" />
+    <None Remove="Check_dati hera.xlsx" />
+    <None Remove="Condomini_doppi.xlsx" />
+    <None Remove="dati.xlsx" />
+    <None Remove="Operatori_doppi.xlsx" />
+    <None Remove="STUDIO resident estrazione del 8112021 .xlsx" />
+  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="6.0.0" />
+	</ItemGroup>
+</Project>

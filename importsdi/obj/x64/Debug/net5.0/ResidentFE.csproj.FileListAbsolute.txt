@@ -1,0 +1,14 @@
+C:\Progetti\ResidentFE\importsdi\bin\x64\Debug\net5.0\ResidentFE.deps.json
+C:\Progetti\ResidentFE\importsdi\bin\x64\Debug\net5.0\ResidentFE.dll
+C:\Progetti\ResidentFE\importsdi\bin\x64\Debug\net5.0\ref\ResidentFE.dll
+C:\Progetti\ResidentFE\importsdi\bin\x64\Debug\net5.0\ResidentFE.pdb
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.Properties.Resources.resources
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.csproj.GenerateResource.cache
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.GeneratedMSBuildEditorConfig.editorconfig
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.AssemblyInfoInputs.cache
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.AssemblyInfo.cs
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.csproj.CoreCompileInputs.cache
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.dll
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ref\ResidentFE.dll
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.pdb
+C:\Progetti\ResidentFE\importsdi\obj\x64\Debug\net5.0\ResidentFE.csproj.AssemblyReference.cache
