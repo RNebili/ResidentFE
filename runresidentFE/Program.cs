@@ -1,5 +1,9 @@
 ﻿using System;
 
+//v1.0 gestione dei pod/pdr in caso di errore
+//v1.1 per cercare operatore uso solo la partita iva
+
+
 namespace runresidentFE
 {
     class Program

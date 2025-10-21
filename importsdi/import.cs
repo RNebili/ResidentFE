@@ -3,46 +3,65 @@ using System.Text;
 using System.Collections.Generic;
 using System.Xml;
 using System.ComponentModel;
-
+using System.Collections;
 
 namespace ResidentFE
 {
 
-
     public class import
     {
-        int log_lvl = 10;
         string condominiarchivi = @"\\eva\dati\CondominiArchivi\";
+        public static string pathRisposteSataTodo = @"D:\xml_file\risposteSATA.todo\";
+        public static string pathRisposteSataDone = @"D:\xml_file\risposteSATA.done\";
+        public static string pathRisposteSataDiscarded = @"D:\xml_file\risposteSATA.discarded\";
+        public static string pathDebug = @"D:\xml_file\debug\";
+
+
+        public static bool IsTodoMode()
+        {
+            //se presente la cartella non scarico da sata ma guardo se ci sono file da elaborare
+            return System.IO.Directory.Exists(import.pathRisposteSataTodo);
+        }
+
+        public static bool IsDebugMode()
+        {
+            //se presente la cartella non scarico da sata ma guardo se ci sono file da elaborare
+            return System.IO.Directory.Exists(import.pathDebug);
+        }
+
+
         public void Run()
         {
             Console.WriteLine("Run()");
             System.IO.StreamWriter logfile = new System.IO.StreamWriter(@"D:\xml_file\log_import.txt", true);
-            System.IO.StreamWriter logfile_detailed = new System.IO.StreamWriter(@"D:\xml_file\log_import_detailed.txt", true);
             logfile.AutoFlush = true;
-            logfile_detailed.AutoFlush = true;
 
             //string debug_fatture = null; //nome file fatture, se null -> percorso normale,
             //debug
-            bool debug =  System.IO.Directory.Exists(@"D:\xml_file\debug\");  //ambiente di sviluppo            
-            if (debug) {
-                Console.WriteLine("** DEBUG MODE **");
-                XmlDocument xmlin = new XmlDocument();
-                System.Xml.XmlNode n;
-                //xmlin.Load(@"D:\xml_file\debug\Allegri202205270953302335.xml");
-                xmlin.Load(@"D:\xml_file\debug\Maggiolino202205281300116864.xml");
-                var n0 = xmlin.GetElementsByTagName("CedentePrestatore");
-                var n1 = n0[0].SelectSingleNode("DatiAnagrafici");
-                var n3 = n1.SelectSingleNode("IdFiscaleIVA");
-                n = n3.SelectSingleNode("IdPaese");
-                string Paese = n.InnerText;
-                Console.WriteLine(Paese);                
-                System.Environment.Exit(0);
-            }
+            bool debug =  import.IsDebugMode();  //ambiente di sviluppo            
+
+            //if (debug && false ) {
+            //    logfile.WriteLine("** DEBUG MODE **");
+            //    Console.WriteLine("** DEBUG MODE **");
+                
+            //    XmlDocument xmlin = new XmlDocument();
+            //    System.Xml.XmlNode n;
+            //    xmlin.Load(@"D:\xml_file\scaricati\Dario202205312054328118.xml");
+            //    //var n0 = xmlin.GetElementsByTagName("CedentePrestatore");
+            //    //var n1 = n0[0].SelectSingleNode("DatiAnagrafici");
+            //    //var n3 = n1.SelectSingleNode("IdFiscaleIVA");
+            //    //n = n3.SelectSingleNode("IdPaese");
+            //    //string Paese = n.InnerText;
+            //    //Console.WriteLine(Paese);                
+            //    System.Environment.Exit(8);
+            //}
             //todo
-            bool todo = System.IO.Directory.Exists(@"D:\xml_file\risposteSATA.todo\");  //ambiente di sviluppo            
+            bool todo = import.IsTodoMode();
+                
             if (todo) {
                 logfile.WriteLine("** TODO MODE **");
-            }
+                Console.WriteLine("** TODO MODE **");
+            }            
             //
             string percorso_pdf = "";
             string sName = "";
@@ -50,12 +69,9 @@ namespace ResidentFE
             string sPdfRendering = "";
             string sFile = @"D:\xml_file\scaricati\";
 
-            string Cond_partiva = "";
             string inv_ret = "";
             string stato = "";
             string errsql = "";
-            string nomecond = "";
-            string idcond = "";
             string checkContratto = "";
             string numfat = "";
             decimal imponibile, iva, aliq;
@@ -77,44 +93,98 @@ namespace ResidentFE
                 if (w_apisql.Ok == true)
                 {
                     logfile.WriteLine("inizio " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    logfile_detailed.WriteLine("inizio " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
-                    IList<Reobj> Condomini = w_apisql.GetCondomini();
-                    foreach (Reobj wCond in Condomini)
-                    {
-                        Cond_partiva = wCond.GetNotNullString("codiceFiscale");
+                    List<Hashtable> hCondomini = new List<Hashtable>();
+                    if (debug) {                         
+                        Hashtable hDoc = new Hashtable();
+                        //funziona con correzione
+                        //hDoc.Add("codiceFiscale", "94005900363");
+                        //hDoc.Add("condominio", "Maggiolino");
+                        //funziona
+                        //hDoc.Add("codiceFiscale", "94135820366");
+                        //hDoc.Add("condominio", "Marinetti");
+                        //funziona con correzione
+                        //hDoc.Add("codiceFiscale", "94067840366");
+                        //hDoc.Add("condominio", "MezzaLuna2");
+                        //allegri 
+                        //uristring too long
+                        //hDoc.Add("codiceFiscale", "94071970365");
+                        //hDoc.Add("condominio", "Righi");
+                        //dario
+                        //hDoc.Add("codiceFiscale", "94023720363");
+                        //hDoc.Add("condominio", "Dario");
+                        //piave
+                        //hDoc.Add("codiceFiscale", "94039740363");                        
+                        //hDoc.Add("condominio", "Piave");
+                        //massaia
+                        //hDoc.Add("codiceFiscale", "94035300360");                        
+                        //hDoc.Add("condominio", "Massaia");
+                        //pacinotti
+                        //hDoc.Add("codiceFiscale", "94002060369");                        
+                        //hDoc.Add("condominio", "PACINOTTI");
+                        //hDoc.Add("codiceFiscale", "94012910363");                        
+                        //hDoc.Add("condominio", "ELLE COGNENTO");
+                        //hDoc.Add("codiceFiscale", "94075500366");                        
+                        //hDoc.Add("condominio", "EllisseSrl");
+                        hDoc.Add("codiceFiscale", "80011160365");
+                        hDoc.Add("condominio", "mb");
+                        //hDoc.Add("codiceFiscale", "94003560367");
+                        //hDoc.Add("condominio", "mb");
 
+                        //
+                        hCondomini.Add(hDoc);
+                    } else {
+                        IList<Reobj> Condomini;
+                        Condomini = w_apisql.GetCondomini();
+                        foreach (Reobj wCond in Condomini) {
+                            Hashtable hDoc = new Hashtable();
+                            hDoc.Add("codiceFiscale", wCond.GetNotNullString("codiceFiscale"));
+                            hDoc.Add("condominio", wCond.GetNotNullString("condominio"));
+                            hDoc.Add("idcondominio", Convert.ToString(wCond.GetInteger("idcondominio")));
+                            hDoc.Add("IdCdmAmministrazione", wCond.GetInteger("IdCdmAmministrazione"));
+                            hCondomini.Add(hDoc);
+                        }
+                    }
+                        
+                    foreach (Hashtable hCond in hCondomini)
+                    {
+                        string Cond_partiva = (string) hCond["codiceFiscale"];
                         wInvoice.Cond_partiva = Cond_partiva;
                         do
                         {
                             SonoResident = false;
                             checkContratto = "";
                             stato = wInvoice.Run();
-                            nomecond = wCond.GetNotNullString("condominio");
+                            string nomecond = (string) hCond["condominio"];
                             logfile.WriteLine("Condominio " + Cond_partiva + " - " + nomecond);
-                            logfile_detailed.WriteLine("Condominio " + Cond_partiva + " - " + nomecond);
+                            Console.WriteLine("Condominio " + Cond_partiva + " - " + nomecond);
+                            //if (debug) Console.WriteLine("debug:" + stato);
                             if (stato == "OK")
                             {
                                 inv_ret = wInvoice.Invoice;
-
-                                idcond = Convert.ToString(wCond.GetInteger("idcondominio"));
+                                inv_ret = this.FixXml(inv_ret); //ivan: correggo casistiche non compatibili con il parser
+                                string idcond = (string)hCond["idcondominio"]; ;
 
                                 sName = DateTime.Now.ToString("yyyyMMddHHmmssffff") + ".xml";
                                 contafatture++;
 
                                 sName = sFile + nomecond.Substring(0, 1) + nomecond.Substring(1).ToLower() + sName;
+                                Console.WriteLine("sName=" + sName);
                                 if (System.IO.File.Exists(sName))
                                     System.IO.File.Delete(sName);
                                 System.IO.File.WriteAllText(sName, inv_ret);
                                 XmlDocument doc = new XmlDocument();
-                                //ivan: genera errore su alcune fatture
-                                //doc.LoadXml(inv_ret);
-                                doc.Load(inv_ret);
-
+                                doc.Load(@sName);
                                 using (FornitoreInfo xFornitoreInfo = new FornitoreInfo(doc))
                                 {
                                     var n0 = doc.GetElementsByTagName("FatturaElettronicaBody");
                                     numfat = n0[0].SelectSingleNode("DatiGenerali/DatiGeneraliDocumento/Numero").InnerText;
                                     datafat = Convert.ToDateTime(n0[0].SelectSingleNode("DatiGenerali/DatiGeneraliDocumento/Data").InnerText);
+                                    if (debug) {
+                                        Console.WriteLine("numfat=" + numfat);
+                                        Console.WriteLine("** END DEBUG MODE **");
+                                        wInvoice.moveJsonToDoneFolder();
+                                        System.Environment.Exit(5);
+                                    }
                                     Reobj Operatore = w_apisql.GetOperatore(xFornitoreInfo.PartitaIva, xFornitoreInfo.PartitaIva, idcond, datafat,logfile);
                                     Reobj Invoice = new();
 
@@ -163,7 +233,6 @@ namespace ResidentFE
                                                 }
                                                 almenouno = true;
                                                 logfile.WriteLine("Condomino:" + nomecond + " creazione pdf (allegato) " + percorso_pdf + sPdf);
-                                                logfile_detailed.WriteLine("Condomino:" + nomecond + " creazione pdf (allegato) " + percorso_pdf + sPdf);
                                                 System.IO.File.WriteAllBytes(percorso_pdf + sPdf, Convert.FromBase64String(xPdf.SelectSingleNode("Attachment").InnerText));
                                             }
                                         }
@@ -171,23 +240,23 @@ namespace ResidentFE
                                         {
                                             sPdfRendering += "_" + Pulisci(numfat) + "_" + datafat.ToString("yyyy_MM_dd") + ".pdf";
                                             logfile.WriteLine("Condomino:" + nomecond + " creazione pdf (renderizzazione) " + percorso_pdf + sPdfRendering);
-                                            logfile_detailed.WriteLine("Condomino:" + nomecond + " creazione pdf  (renderizzazione) " + percorso_pdf + sPdfRendering);
                                             System.IO.File.WriteAllBytes(percorso_pdf + sPdfRendering, wInvoice.FilePdf);
 
                                         }
 
                                         Invoice["idcondominio"] = idcond;
-                                        Invoice["annobilancio"] = wCond.GetInteger("IdCdmAmministrazione");
+                                        Invoice["annobilancio"] = (int) hCond["IdCdmAmministrazione"];
                                         Invoice["motivo"] = "";
+                                        string invoice_motivo_acqua = ""; //v1.0
                                         if (Operatore.Fields.Count == 0)
                                         {
-                                            Invoice["idoperatore"] = "";
+                                            Invoice["idoperatore"] = 0;
                                             Invoice["ragsocoperatore"] = xFornitoreInfo.RagioneSociale;
                                             Invoice["codfiscoperatore"] = xFornitoreInfo.PartitaIva;
                                             Invoice["pivaoperatore"] = xFornitoreInfo.PartitaIva;
                                             Invoice["idpianodeiconti"] = "";
                                             Invoice["created_at"] = DateTime.Now;
-                                            Invoice["motivo"] = "Operatore non trovato";
+                                            Invoice["motivo"] += (Invoice["motivo"].ToString()!=""?" | ":"") + "Operatore non trovato"; //v1.0 concateno
                                             Invoice["allegato"] = percorso_pdf + sPdf;
                                         }
                                         else
@@ -238,6 +307,7 @@ namespace ResidentFE
                                                 Invoice["descrizionesfattura"] = x0.InnerText;
                                             if (xFornitoreInfo.PartitaIva.Contains("03819031208"))  //HERA
                                             {
+                                                //v1.0 l'esito è positivo solo nel caso di acqua (per elettricità e gas andrà in errore)
                                                 x0 = xnInv.SelectSingleNode("DatiGenerali/DatiContratto");
                                                 if (x0 != null)
                                                 {
@@ -245,8 +315,8 @@ namespace ResidentFE
                                                     if (x1 != null)
                                                     {
                                                         checkContratto = x1.InnerText;
-                                                        if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond)) != "OK")
-                                                            Invoice["motivo"] = "Pod/PDR HERA errato";
+                                                        if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond), logfile, "DatiGenerali/DatiContratto/IdDocumento") != "OK")
+                                                            invoice_motivo_acqua = "Pod/PDR HERA errato (acqua " + checkContratto + ")"; 
                                                     }
 
                                                 }
@@ -304,24 +374,39 @@ namespace ResidentFE
                                                 }
                                                 if (xFornitoreInfo.PartitaIva.Contains("03819031208"))
                                                 {
-
+                                                    bool errore = false; //v1.0
                                                     x1 = xRighe.SelectSingleNode("AltriDatiGestionali");
                                                     if (x1 != null)
                                                     {
                                                         x2 = x1.SelectSingleNode("RiferimentoTesto");
                                                         checkContratto = x2.InnerText;
-                                                        if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond)) != "OK")
-                                                            Invoice["motivo"] = "Pod/PDR HERA errato";
-                                                        else
-                                                            Invoice["motivo"] = "";
+                                                        if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond), logfile, "AltriDatiGestionali/RiferimentoTesto") != "OK")
+                                                        {
+                                                            Invoice["motivo"] += (Invoice["motivo"].ToString() != "" ? " | " : "") + "Pod/PDR HERA errato (gas/acqua " + checkContratto + ")"; //v1.0 concateno
+                                                            errore = true;
+                                                        }
+                                                        else {
+                                                            //v1.0 avendo trovato una corrispondenza non puo' essere un errore dovuto ad acqua
+                                                            //    Invoice["motivo"] = ""; 
+                                                            invoice_motivo_acqua = ""; 
+                                                        }
+
                                                     }
 
 
 
-                                                    if (checkContratto == "" & Invoice["motivo"].ToString() == "")
-                                                        Invoice["motivo"] = "Pod/PDR HERA mancante";
+                                                    //if (checkContratto == "" & Invoice["motivo"].ToString() == "")
+                                                    if (checkContratto == "" && !errore) {
+                                                        Invoice["motivo"] += (Invoice["motivo"].ToString() != "" ? " | " : "") + "Pod/PDR HERA mancante (gas/acqua)"; //v1.0 concateno
+                                                    }
+                                                        
                                                 }
                                             }
+                                            //v1.0 non avendo trovato corrispondenze gas/elettricità rimane eventuale errore acqua
+                                            if (invoice_motivo_acqua != "") {
+                                                Invoice["motivo"] += (Invoice["motivo"].ToString() != "" ? " | " : "") + invoice_motivo_acqua;
+                                            }
+                                            
 
                                             foreach (XmlNode xRiepil in xnInv.SelectSingleNode("DatiBeniServizi").SelectNodes("DatiRiepilogo"))
                                             {
@@ -425,35 +510,38 @@ namespace ResidentFE
 
                                             Invoice["created_at"] = DateTime.Now;
                                         }
-                                        if (Invoice["motivo"].ToString() == "")
-                                        {
+                                        if (Invoice["motivo"].ToString() == "") {
                                             errsql = w_apisql.SetRegistrazione(Invoice);
 
-                                            if (errsql != "OK")
-                                            {
-                                                Invoice["motivo"] = errsql;
+                                            if (errsql != "OK") {
+                                                Invoice["motivo"] += (Invoice["motivo"].ToString() != "" ? " | " : "") + errsql; //v1.0 concateno
                                                 errsql = w_apisql.InvoiceScartate(Invoice);
                                                 if (errsql != "OK")
                                                     inv_ret = "";
-                                                logfile.WriteLine("Condomino:" + nomecond + " - Import fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + " SCARTATA");
-                                                logfile_detailed.WriteLine("Condomino:" + nomecond + " - Import fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + " SCARTATA");
-                                            }
-                                            else
+                                                logfile.WriteLine("Condomino:" + nomecond + " - Import fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + " SCARTATA errsql=" + Invoice["motivo"].ToString());
+                                                wInvoice.moveJsonToDiscardedFolder();
+                                            } else { 
                                                 logfile.WriteLine("Condomino:" + nomecond + " - Import fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + " avvenuta con successo");
-                                                logfile_detailed.WriteLine("Condomino:" + nomecond + " - Import fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + " avvenuta con successo");
-
-                                        }
-
-                                        else
-                                        {
+                                                //sposto il file
+                                                wInvoice.moveJsonToDoneFolder();
+                                            }
+                                        } else {
+                                            logfile.WriteLine("Condomino:" + nomecond + " - SCARTATA fattura del " + numfat + " del " + datafat.ToString("dd/MM/yyyy") + ": " + Invoice["motivo"].ToString());
                                             errsql = w_apisql.InvoiceScartate(Invoice);
                                             if (errsql != "OK")
                                                 inv_ret = "";
+                                            wInvoice.moveJsonToDiscardedFolder();
                                         }
 
 
                                     }
                                 }
+                                //if (todo) {
+                                //    //per evitare loop esco
+                                //    logfile.WriteLine("Condomino:" + nomecond + " - FINE TODO");
+                                //    Console.WriteLine("Condomino:" + nomecond + " - FINE TODO");
+                                //    System.Environment.Exit(99);
+                                //}
 
                             }
 
@@ -466,7 +554,6 @@ namespace ResidentFE
                                 inv_ret = "";
                                 //    errore = true;
                                 logfile.WriteLine("Condominio " + Cond_partiva + " - " + nomecond + " - " + stato);
-                                logfile_detailed.WriteLine("Condominio " + Cond_partiva + " - " + nomecond + " - " + stato);
                             }
 
                         } while (inv_ret != "");
@@ -479,8 +566,6 @@ namespace ResidentFE
                     }
                 }
                 logfile.WriteLine("Oggi sono state processate " + contafatture + " fatture");
-                logfile_detailed.WriteLine("Oggi sono state processate " + contafatture + " fatture");
-
             }
 
 
@@ -488,10 +573,38 @@ namespace ResidentFE
             catch (Exception e)
             {               
                 logfile.WriteLine(FlattenException(e) + "");
+                Console.WriteLine(FlattenException(e) + "");
             }
             logfile.Close();
-            logfile_detailed.Close();
         }
+
+        public string FixXml(string xml) {
+            string k;
+            k = "<FatturaElettronica ";
+            if (xml.Contains(k))
+            {
+                String[] s = xml.Split(k);
+                xml = k + s[1];
+            }
+            //
+            k = "<p:FatturaElettronica ";
+            if (xml.Contains(k))
+            {
+                String[] s = xml.Split(k);
+                xml = k + s[1];
+            }
+            //
+            //k = "<p:FatturaElettronica ";
+            //if (xml.Contains(k))
+            //{
+            //    string k2 = "<FatturaElettronicaHeader>";
+            //    String[] s = xml.Split(k2);
+            //    xml = "<FatturaElettronica xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" versione=\"FPR12\" xmlns=\"http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2\">" + k2 + s[1];
+            //    xml = xml.Replace("</p:FatturaElettronica>", "</FatturaElettronica>");
+            //}
+            return xml;
+        }
+
 
         public static string FlattenException(Exception exception)
         {
@@ -509,7 +622,7 @@ namespace ResidentFE
                 }               
             }
             catch (Exception e) {
-                stringBuilder.AppendLine(exception.Message);
+                stringBuilder.AppendLine(e.Message);
             }
 
             return stringBuilder.ToString();
@@ -577,7 +690,7 @@ namespace ResidentFE
                 {
                     XmlDocument doc = new XmlDocument();
 
-                    doc.Load(namefile);
+                    doc.LoadXml(namefile);
                     Reobj wCond = new();
                     xClienteInfo = new ClienteInfo(doc);
                     wCond = w_apisql.GetCondominio(xClienteInfo.CodiceFiscale, logfile);
@@ -645,7 +758,7 @@ namespace ResidentFE
                             Invoice["motivo"] = "";
                             if (Operatore.Fields.Count == 0)
                             {
-                                Invoice["idoperatore"] = "";
+                                Invoice["idoperatore"] = 0;
                                 Invoice["ragsocoperatore"] = xFornitoreInfo.RagioneSociale;
                                 Invoice["codfiscoperatore"] = xFornitoreInfo.PartitaIva;
                                 Invoice["pivaoperatore"] = xFornitoreInfo.PartitaIva;
@@ -711,7 +824,7 @@ namespace ResidentFE
                                         if (x1 != null)
                                         {
                                             checkContratto = x1.InnerText;
-                                            if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond)) != "OK")
+                                            if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond), logfile, "xmlfile()|DatiGenerali/DatiContratto/IdDocumento") != "OK")
                                                 Invoice["motivo"] = "Pod/PDR HERA errato";
                                         }
 
@@ -780,7 +893,7 @@ namespace ResidentFE
                                             checkContratto = x2.InnerText;
                                             logfile.WriteLine("riferimento");
 
-                                            if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond)) != "OK")
+                                            if (w_apisql.CheckContratto(checkContratto, Convert.ToInt32(idcond), logfile, "xmlfile()|AltriDatiGestionali/RiferimentoTesto") != "OK")
                                                 Invoice["motivo"] = "Pod/PDR HERA errato";
                                             else
                                                 Invoice["motivo"] = "";
@@ -960,24 +1073,34 @@ namespace ResidentFE
             var n0 = xmlin.GetElementsByTagName("CedentePrestatore");
             var n1 = n0[0].SelectSingleNode("DatiAnagrafici");
             var n3 = n1.SelectSingleNode("IdFiscaleIVA");
+            var nana = n1.SelectSingleNode("Anagrafica");
             n = n3.SelectSingleNode("IdPaese");
             Paese = n.InnerText;
             n = n3.SelectSingleNode("IdCodice");
             PartitaIva = n.InnerText;
-            n3 = n1.SelectSingleNode("Anagrafica");
-            if (n3 != null)
+            if (nana != null)
             {
-                n = n3.SelectSingleNode("Denominazione");
-                RagioneSociale = n.InnerText;
+                n = nana.SelectSingleNode("Denominazione");
+                if (n != null)
+                {
+                    RagioneSociale = n.InnerText;
+                } else
+                {
+                    var ncognome = nana.SelectSingleNode("Cognome");
+                    var nnome = nana.SelectSingleNode("Nome");
+                    var ntitolo = nana.SelectSingleNode("Titolo");
+                    RagioneSociale = (ntitolo != null ? ntitolo.InnerText + " " : "") + (nnome != null ? nnome.InnerText + " " : "") + (ncognome != null ? ncognome.InnerText + "" : "");
+                }
             }
+            Console.WriteLine("RagioneSociale:" + RagioneSociale);
             n = n1.SelectSingleNode("RegimeFiscale"); RegimeFiscale = n.InnerText;
 
             n1 = n0[0].SelectSingleNode("Sede");
-            n = n1.SelectSingleNode("Indirizzo"); Indirizzo = n.InnerText;
-            n = n1.SelectSingleNode("CAP"); Cap = n.InnerText;
-            n = n1.SelectSingleNode("Comune"); Comune = n.InnerText;
-            n = n1.SelectSingleNode("Provincia"); Provincia = n.InnerText;
-            n = n1.SelectSingleNode("Nazione"); Nazione = n.InnerText;
+            n = n1.SelectSingleNode("Indirizzo"); Indirizzo = (n != null ? n.InnerText : "");
+            n = n1.SelectSingleNode("CAP"); Cap = (n != null ? n.InnerText : "");
+            n = n1.SelectSingleNode("Comune"); Comune = (n != null ? n.InnerText : "");
+            n = n1.SelectSingleNode("Provincia"); Provincia = (n != null ? n.InnerText : "");
+            n = n1.SelectSingleNode("Nazione"); Nazione = (n != null ? n.InnerText : "");
         }
 
         protected virtual void Dispose(bool disposing)

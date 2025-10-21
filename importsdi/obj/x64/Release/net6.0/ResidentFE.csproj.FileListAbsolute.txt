@@ -1,0 +1,14 @@
+D:\tlco\ResidentFE\importsdi\bin\x64\Release\net6.0\ResidentFE.deps.json
+D:\tlco\ResidentFE\importsdi\bin\x64\Release\net6.0\ResidentFE.dll
+D:\tlco\ResidentFE\importsdi\bin\x64\Release\net6.0\ResidentFE.pdb
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.csproj.AssemblyReference.cache
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.Properties.Resources.resources
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.csproj.GenerateResource.cache
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.GeneratedMSBuildEditorConfig.editorconfig
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.AssemblyInfoInputs.cache
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.AssemblyInfo.cs
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.csproj.CoreCompileInputs.cache
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.dll
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\refint\ResidentFE.dll
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ResidentFE.pdb
+D:\tlco\ResidentFE\importsdi\obj\x64\Release\net6.0\ref\ResidentFE.dll

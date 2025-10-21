@@ -70,6 +70,8 @@ namespace ResidentFE
         private string _invoice;
         public byte[] FilePdf { get; set; }
 
+        public string jsonPath = null;
+
 
 
         public string Cond_partiva
@@ -92,11 +94,38 @@ namespace ResidentFE
 
         public string Run()
         {
-            bool todo = import.IsTodoMode();
-
             string stato = "";
-            string nomefile = "";
             _invoice = "";
+            //BEGIN TODO MODE
+            bool todo = import.IsTodoMode();
+            if (todo) {
+                string[] fileEntries = Directory.GetFiles(import.pathRisposteSataTodo);
+                foreach (string fileName in fileEntries) {
+                    String[] s =fileName.Split("\\");
+                    Console.WriteLine("Elaborazione " + fileName);
+                    if (s.Length > 0) s = s[s.Length - 1].Split(".");                    
+                    s = s[0].Split("_");
+                    if (s.Length > 0 && s[1] == _pivacond.Trim())
+                    {
+                        stato = this.SetByFile(fileName);
+                        Console.WriteLine("stato=" + stato);
+                        return stato;
+                    }
+                    else {
+                        Console.WriteLine("Situazione non previsto con la partita iva, aggiornare hDoc.Add(\"codiceFiscale\", \"94035300360\");");
+                        Console.WriteLine((s.Length>1?"s[1]=\"" + s[1] + "\"":"-"));
+                        Console.WriteLine("_pivacond.Trim()=\"" + _pivacond.Trim() + "\"");
+                        return "KO";
+                    }
+                    
+                }                                
+            }
+            if (import.IsDebugMode()) {                
+                Console.WriteLine("** END DEBUG MODE **");
+                System.Environment.Exit(0);
+            }
+            //END TODO MODE
+            string nomefile = "";
             string DATA = @"{""object"":{""name"":""Name""}}";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
             request.Method = "POST";
@@ -130,43 +159,7 @@ namespace ResidentFE
                         nomefile = @"D:\xml_file\risposteSATA\" + DateTime.Now.ToString("yyyyMMddHHmmssffff") + "_" + _pivacond.Trim() + ".json";
                         System.IO.File.WriteAllText(nomefile, response);
 
-
-                        invoice_ret w_invoice = JsonSerializer.Deserialize<invoice_ret>(response);
-                        FilePdf = Convert.FromBase64String(w_invoice.HUB_DC.invoiceRenderingFileData);
-                        byte[] FileFirmatoP7m = Convert.FromBase64String(w_invoice.HUB_FC.invoiceFileData);
-
-                        if (System.IO.Path.GetExtension(w_invoice.HUB_FC.invoiceFileName) == ".p7m")
-                        {
-                            if (FileFirmatoP7m != null)
-                            {
-                                SignedCms cmsFirmato = new();
-                                cmsFirmato.Decode(FileFirmatoP7m);
-                                if (!cmsFirmato.Detached)
-                                {
-                                    byte[] str = cmsFirmato.ContentInfo.Content;
-                                    _invoice = Encoding.UTF8.GetString(str);
-
-                                    stato = "OK";
-                                }
-                                else
-                                {
-                                    stato = "Errore decodifica pm7";
-                                }
-
-
-                            }
-                            else
-                            {
-                                stato = "Errore decodifica pm7";
-                            }
-
-                        }
-                        else
-                        {
-                            _invoice = Encoding.UTF8.GetString(FileFirmatoP7m);
-                            stato = "OK";
-                        }
-
+                        stato = this.SetByFile(nomefile);
 
                     }
                     else
@@ -192,7 +185,73 @@ namespace ResidentFE
             }
             return stato;
         }
+
+
+        public void moveJsonToDoneFolder() {
+            string donePath = import.pathRisposteSataDone;
+            if (!System.IO.Directory.Exists(donePath))
+                System.IO.Directory.CreateDirectory(donePath);
+            System.IO.File.Move(this.jsonPath, donePath + System.IO.Path.GetFileName(this.jsonPath));
+        }
+
+        public void moveJsonToDiscardedFolder() {
+            string discardedPath = import.pathRisposteSataDiscarded;
+            if (!System.IO.Directory.Exists(discardedPath))
+                System.IO.Directory.CreateDirectory(discardedPath);
+            System.IO.File.Move(this.jsonPath, discardedPath + System.IO.Path.GetFileName(this.jsonPath));
+        }
+
+        public string SetByFile(string nomeFile)
+        {
+            this.jsonPath = nomeFile;
+            string stato = "";
+            string response = System.IO.File.ReadAllText(nomeFile);
+            invoice_ret w_invoice = JsonSerializer.Deserialize<invoice_ret>(response);
+            FilePdf = Convert.FromBase64String(w_invoice.HUB_DC.invoiceRenderingFileData);
+            byte[] FileFirmatoP7m = Convert.FromBase64String(w_invoice.HUB_FC.invoiceFileData);
+
+            if (System.IO.Path.GetExtension(w_invoice.HUB_FC.invoiceFileName) == ".p7m")
+            {
+                if (FileFirmatoP7m != null)
+                {
+                    SignedCms cmsFirmato = new();
+                    try
+                    {
+                        cmsFirmato.Decode(FileFirmatoP7m);
+                    } catch (Exception e) {
+                        stato = "Errore decodifica pm7 (2) " + nomeFile + " " + e.Message;
+                    }
+                    
+                    if (stato == "" && !cmsFirmato.Detached)
+                    {
+                        byte[] str = cmsFirmato.ContentInfo.Content;
+                        _invoice = Encoding.UTF8.GetString(str);
+
+                        stato = "OK";
+                    }
+                    else if (stato == "")
+                    {
+                        stato = "Errore decodifica pm7 (1) " + nomeFile;
+                    }
+
+
+                }
+                else
+                {
+                    stato = "Errore decodifica pm7 (0) " + nomeFile;
+                }
+
+            }
+            else
+            {
+                _invoice = Encoding.UTF8.GetString(FileFirmatoP7m);
+                stato = "OK";
+            }
+            return stato;
+
+        }
     }
+
 
 
     public class Amministrazione

@@ -22,8 +22,25 @@ namespace ResidentFE
             get { return m_ok; }
 
         }
+
+        //TODO da usare per evitare codice duplicato e debug
+        private SqlConnection getSqlConnection(){
+            SqlConnectionStringBuilder con_string = new SqlConnectionStringBuilder();
+            con_string.DataSource = istanza;
+            con_string.UserID = username;
+            con_string.Password = password;
+            con_string.InitialCatalog = dbname;
+            return new SqlConnection(con_string.ConnectionString);
+        }
+
+
         public void testconnection()
         {
+            if (import.IsDebugMode()) {
+                Console.WriteLine("** SQL EMULATED IN DEBUG MODE **");
+                m_ok = true;
+                return;
+            }
             try
             {
                 SqlConnectionStringBuilder con_string = new SqlConnectionStringBuilder();
@@ -98,7 +115,7 @@ namespace ResidentFE
 
         public Reobj GetCondominio(string codicefiscale, System.IO.StreamWriter logfile)
         {
-            logfile.WriteLine("GetCondominio(string codicefiscale = " + codicefiscale + ")");
+            //logfile.WriteLine("GetCondominio(string codicefiscale = " + codicefiscale + ")");
 
             Reobj result = new Reobj();
             try
@@ -149,9 +166,9 @@ namespace ResidentFE
         }
         public Reobj GetOperatore(string cfisc, string piva, string condominio, DateTime datafat, System.IO.StreamWriter logfile)
         {
-            bool log = true;
+            bool log = false;
             //TODO impostare un log_lvl nel config , per debug direttamente in prod
-            logfile.WriteLine("GetOperatore(string cfisc = " + cfisc + ", string piva = " + piva + ", string condominio = " + condominio + ", DateTime datafat = " + datafat.ToString() + ")");
+            //logfile.WriteLine("GetOperatore(string cfisc = " + cfisc + ", string piva = " + piva + ", string condominio = " + condominio + ", DateTime datafat = " + datafat.ToString() + ")");
 
             Reobj result = new Reobj();
 
@@ -167,14 +184,13 @@ namespace ResidentFE
             con_stringpiano.Password = password;
             con_stringpiano.InitialCatalog = dbname;
 
+            //v1.1 String sql = "select IdOperatori, deno, cFisc, pIva, codiceTributo from Operatori  where cFisc = @CFISC or pIva =@PIVA and (dataFine is null or dataFine > '";
             String sql = "select IdOperatori, deno, cFisc, pIva, codiceTributo from Operatori  where cFisc = @CFISC or pIva =@PIVA and (dataFine is null or dataFine > '";
             //sql += datafat.ToShortDateString() + "')";
             sql += datafat.ToString("yyyy-dd-MM hh:mm tt") + "')";
             String sqlpiano = "select StrIdPianoDeiConti from Tbl_DettaglioRipartizioni  ";
             sqlpiano += "where (IdOperatore = @IDoper or IdOperatore is null) and IdCondominio = @IdCond and Abilita = 1 and TipoRipartizione = 1 ";
-
-            logfile.WriteLine("sql= " + sql);
-            logfile.WriteLine("sqlpiano= " + sqlpiano);
+            string IDoper = "";
 
             using (SqlConnection sql_con = new SqlConnection(con_string.ConnectionString))
             {
@@ -200,6 +216,7 @@ namespace ResidentFE
                             {
                                 using (SqlCommand sql_commpiano = new SqlCommand(sqlpiano, sql_conpiano))
                                 {
+                                    IDoper = sql_reader[0].ToString();
                                     sql_commpiano.Parameters.AddWithValue("@IDoper", sql_reader[0]);
                                     sql_commpiano.Parameters.AddWithValue("@IdCond", condominio);
                                     sql_comm.CommandType = CommandType.Text;
@@ -235,14 +252,17 @@ namespace ResidentFE
 
                 }
             }
-
-
-
+            if (result.Fields.Count == 0) {
+                logfile.WriteLine(" GetOperatore() KO sql=" + sql.Replace("@CFISC", "'" + cfisc + "'").Replace("@PIVA", "'" + piva + "'") + " sqlpiano=" + sqlpiano.Replace("@IDoper", "'" + IDoper + "'").Replace("@IdCond", "'" + condominio + "'"));
+            }
             return result;
         }
         public string SetRegistrazione(Reobj invoice)
         {
             string result = "OK";
+
+            string log = "";
+
             try
             {
                 SqlConnectionStringBuilder con_string = new SqlConnectionStringBuilder();
@@ -291,7 +311,9 @@ namespace ResidentFE
                             sql_comm.Parameters.AddWithValue("@datapagamentofissa", invoice.GetDateTime("datapagamentofissa"));
 
                         sql_comm.Parameters.AddWithValue("@idpianodeiconti", invoice.GetNotNullString("idpianodeiconti"));
-                        sql_comm.Parameters.AddWithValue("@descrizionesfattura", invoice.GetNotNullString("descrizionesfattura"));
+                        string df = invoice.GetNotNullString("descrizionesfattura");
+                        df = df.Length <= 250 ? df : df.Substring(0, 250);
+                        sql_comm.Parameters.AddWithValue("@descrizionesfattura", df);
                         sql_comm.Parameters.AddWithValue("@tipodocumento", invoice.GetInteger("tipodocumento"));
                         sql_comm.Parameters.AddWithValue("@imponibilefattura", invoice.GetDecimal("imponibilefattura"));
                         sql_comm.Parameters.AddWithValue("@ivafattura", invoice.GetDecimal("ivafattura"));
@@ -317,9 +339,13 @@ namespace ResidentFE
                         sql_comm.Parameters.AddWithValue("@esenteiva", invoice.GetDecimal("esenteiva"));
                         sql_comm.Parameters.AddWithValue("@imponibile5", invoice.GetDecimal("imponibile5"));
                         sql_comm.Parameters.AddWithValue("@iva5", invoice.GetDecimal("iva5"));
+                        log += sql + " >>>";
 
+                        foreach (SqlParameter sp in sql_comm.Parameters)
+                        {
+                            log += " " + sp.ParameterName + "=" + sp.Value.ToString();
+                        }
                         sql_comm.CommandType = CommandType.Text;
-
                         sql_con.Open();
                         sql_comm.ExecuteNonQuery();
                     }
@@ -329,11 +355,12 @@ namespace ResidentFE
             }
             catch (SqlException e)
             {
-                result = e.Message.ToString();
+                result = e.Message.ToString() + " >>> " + log;
             }
 
             return result;
         }
+
 
         public string InvoiceScartate(Reobj invoice)
         {
@@ -402,9 +429,10 @@ namespace ResidentFE
 
             return "OK";
         }
-        public string CheckContratto(string contratto, int idcondominio)
+        public string CheckContratto(string contratto, int idcondominio, System.IO.StreamWriter logfile, string logkey)
         {
             string result = "KO";
+            string sql = "";
             try
             {
                 SqlConnectionStringBuilder con_string = new SqlConnectionStringBuilder();
@@ -418,7 +446,7 @@ namespace ResidentFE
                 {
                     sql_con.Open();
 
-                    String sql = "SELECT IdCondominio, Anno, CodiceCliente, Contratto, Consumo, DsTipoConsumo, dtag, Gestore FROM [Condomini ConsumiPresunti] ";
+                    sql = "SELECT IdCondominio, Anno, CodiceCliente, Contratto, Consumo, DsTipoConsumo, dtag, Gestore FROM [Condomini ConsumiPresunti] ";
                     sql += " where Contratto = '" + contratto.Trim() + "' and IdCondominio =" + idcondominio;
 
                     using (SqlCommand sql_comm = new SqlCommand(sql, sql_con))
@@ -441,6 +469,10 @@ namespace ResidentFE
             {
                 result = e.ToString();
             }
+            //if (result != "OK")
+            //{
+                logfile.WriteLine("CheckContratto: result=" + result + " key=" + logkey  + " sql=" + sql);
+            //}
             return result;
         }
 
